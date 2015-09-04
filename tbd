@@ -14,7 +14,7 @@ Extract the tar FILE into the current working directory. If the contents
 of the tar file are namespaced into their own directory, then this is
 the same as "tar xf FILE". However, if the contents extract all over the
 working directory (i.e., a tarbomb), then a directory is first created
-for them (with the same name as FILE, with ".tar" removed).
+for them (with the same name as FILE, with the extension removed).
 EOF
 }
 
@@ -29,16 +29,10 @@ function roots {
   echo $ROOTS
 }
 
-# Strip ".tar" from the tar file for the tarbomb directory
+# Strip archive extension from the tar file for the tarbomb directory
 function dir {
   FILE=$1
-  sed "s/\.tar$//" <<< $(basename $FILE)
-}
-
-# Check we have a tar file
-function is_tar {
-  FILE=$1
-  grep "tar archive" <<< $(file $1) &>/dev/null
+  sed -E "s/\.tar(\.[a-zA-Z0-9_-]+)*$//" <<< $(basename $FILE)
 }
 
 if [ -z "${1:-}" ]; then
@@ -47,17 +41,22 @@ if [ -z "${1:-}" ]; then
 fi
 
 FILE=$1
-
-if ! is_tar "$FILE"; then
-  echo "\"$FILE\" is not a tar archive" >&2
-  usage
-  exit 1
-fi
-
 EXTRACT=.
 
-# Create extraction directory for tarbombs
-if [ $(roots $FILE) -gt 1 ]; then
+case $(roots $FILE) in
+0)
+  # Empty or not a tar archive
+  echo "\"$FILE\" is empty or not a tar achive" >&2
+  usage
+  exit 1
+  ;;
+
+1)
+  # Demilitarised tar archive
+  ;;
+
+*)
+  # tarbomb: Create extraction directory (if possible)
   BOMBDIR=$(dir $FILE)
   if [ ! -e $BOMBDIR ]; then
     mkdir $BOMBDIR
@@ -66,6 +65,7 @@ if [ $(roots $FILE) -gt 1 ]; then
     echo "Cannot create directory \"$BOMBDIR\" for tarbomb extraction" >&2
     exit 1
   fi
-fi
+  ;;
+esac
 
 tar xf $FILE -C $EXTRACT
