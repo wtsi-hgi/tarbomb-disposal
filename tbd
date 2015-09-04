@@ -1,0 +1,71 @@
+#!/bin/bash
+
+# MIT License
+# Copyright (c) 2015 Genome Research Limited
+
+set -eu -o pipefail
+
+function usage {
+  cat <<EOF
+tarbomb Disposal
+Usage: $(basename $0) FILE
+
+Extract the tar FILE into the current working directory. If the contents
+of the tar file are namespaced into their own directory, then this is
+the same as "tar xf FILE". However, if the contents extract all over the
+working directory (i.e., a tarbomb), then a directory is first created
+for them (with the same name as FILE, with ".tar" removed).
+EOF
+}
+
+# Count unique roots in the tar file
+function roots {
+  FILE=$1
+  ROOTS=$(tar tf $FILE \
+        | cut -d/ -f1 \
+        | uniq \
+        | wc -l)
+
+  echo $ROOTS
+}
+
+# Strip ".tar" from the tar file for the tarbomb directory
+function dir {
+  FILE=$1
+  sed "s/\.tar$//" <<< $(basename $FILE)
+}
+
+# Check we have a tar file
+function is_tar {
+  FILE=$1
+  grep "tar archive" <<< $(file $1) &>/dev/null
+}
+
+if [ -z "${1:-}" ]; then
+  usage
+  exit 1
+fi
+
+FILE=$1
+
+if ! is_tar "$FILE"; then
+  echo "\"$FILE\" is not a tar archive" >&2
+  usage
+  exit 1
+fi
+
+EXTRACT=.
+
+# Create extraction directory for tarbombs
+if [ $(roots $FILE) -gt 1 ]; then
+  BOMBDIR=$(dir $FILE)
+  if [ ! -e $BOMBDIR ]; then
+    mkdir $BOMBDIR
+    EXTRACT=$BOMBDIR
+  else
+    echo "Cannot create directory \"$BOMBDIR\" for tarbomb extraction" >&2
+    exit 1
+  fi
+fi
+
+tar xf $FILE -C $EXTRACT
