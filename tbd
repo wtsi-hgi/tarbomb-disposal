@@ -8,7 +8,7 @@ set -eu -o pipefail
 function usage {
   cat <<EOF
 tarbomb Disposal
-Usage: $(basename $0) FILE
+Usage: $(basename "$0") FILE
 
 Extract the tar FILE into the current working directory. If the contents
 of the tar file are namespaced into their own directory, then this is
@@ -21,18 +21,16 @@ EOF
 # Count unique roots in the tar file
 function roots {
   FILE=$1
-  ROOTS=$(tar tf $FILE \
-        | cut -d/ -f1 \
-        | uniq \
-        | wc -l)
-
-  echo $ROOTS
+  echo $(tar tf "$FILE" | cut -d/ -f1 | uniq | wc -l)
 }
 
 # Strip archive extension from the tar file for the tarbomb directory
-function dir {
-  FILE=$1
-  sed -E "s/\.tar(\.[a-zA-Z0-9_-]+)*$//" <<< $(basename $FILE)
+# n.b., This strips everything after (and including) ".t", so it will
+# catch ".tar", ".tar.gz", ".tgz", etc., but will also catch false
+# positives such as ".txt"... It shouldn't cause any problems.
+function strip_ext {
+  FILE=$(basename "$1")
+  echo "${FILE%%.t*}"
 }
 
 if [ -z "${1:-}" ]; then
@@ -43,7 +41,7 @@ fi
 FILE=$1
 EXTRACT=.
 
-case $(roots $FILE) in
+case $(roots "$FILE") in
 0)
   # Empty or not a tar archive
   echo "\"$FILE\" is empty or not a tar achive" >&2
@@ -57,9 +55,9 @@ case $(roots $FILE) in
 
 *)
   # tarbomb: Create extraction directory (if possible)
-  BOMBDIR=$(dir $FILE)
-  if [ ! -e $BOMBDIR ]; then
-    mkdir $BOMBDIR
+  BOMBDIR=$(strip_ext "$FILE")
+  if [ ! -e "$BOMBDIR" ]; then
+    mkdir "$BOMBDIR"
     EXTRACT=$BOMBDIR
   else
     echo "Cannot create directory \"$BOMBDIR\" for tarbomb extraction" >&2
@@ -68,4 +66,4 @@ case $(roots $FILE) in
   ;;
 esac
 
-tar xf $FILE -C $EXTRACT
+tar xf "$FILE" -C "$EXTRACT"
