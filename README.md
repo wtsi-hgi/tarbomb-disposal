@@ -9,9 +9,21 @@ removed).
 
 ## Usage
 
-Extract the tar `FILE` into the current working directory:
+Extract the tar `FILE` into a subdirectory of the current working
+directory:
 
-    tbd FILE
+    tbd [options] FILE
+
+The following tar options can be passed through:
+
+Flag | Option
+:--: | --------------------------------
+`m`  | Do not extract modification time
+`o`  | Set owner to yourself
+`p`  | Preserve file permissions
+`v`  | Verbose output
+
+These may be specified with or without a preceding dash.
 
 ## License
 

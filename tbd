@@ -8,13 +8,22 @@ set -eu -o pipefail
 function usage {
   cat <<EOF
 tarbomb Disposal
-Usage: $(basename "$0") FILE
+Usage: $(basename "$0") [options] FILE
 
 Extract the tar FILE into the current working directory. If the contents
 of the tar file are namespaced into their own directory, then this is
 the same as "tar xf FILE". However, if the contents extract all over the
 working directory (i.e., a tarbomb), then a directory is first created
 for them (with the same name as FILE, with the extension removed).
+
+The following tar options can be passed through:
+
+  -m  Do not extract modification time
+  -o  Set owner to yourself
+  -p  Preserve file permissions
+  -v  Verbose output
+
+These may be specified with or without a preceding dash.
 EOF
 }
 
@@ -38,7 +47,11 @@ if [ -z "${1:-}" ]; then
   exit 1
 fi
 
-FILE=$1
+# Last argument
+FILE=${@: -1}
+# Yikes! Strip unsupported flags from the first-to-penultimate argument
+OPTIONS=$(sed "s/[^mopv]//g" <<< ${@:1:$(($#-1))})
+
 EXTRACT=.
 
 case $(roots "$FILE") in
@@ -66,4 +79,4 @@ case $(roots "$FILE") in
   ;;
 esac
 
-tar xf "$FILE" -C "$EXTRACT"
+tar ${OPTIONS}xf "$FILE" -C "$EXTRACT"
