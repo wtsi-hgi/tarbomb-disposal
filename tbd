@@ -30,7 +30,7 @@ function roots {
 # positives such as ".txt"... It shouldn't cause any problems.
 function strip_ext {
   FILE=$(basename "$1")
-  echo "${FILE%%.t*}"
+  echo "${FILE%.t*}"
 }
 
 if [ -z "${1:-}" ]; then
