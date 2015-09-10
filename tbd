@@ -76,6 +76,13 @@ case $(roots "$FILE") in
     echo "Cannot create directory \"$BOMBDIR\" for tarbomb extraction" >&2
     exit 1
   fi
+
+  BOMB="\xf0\x9f\x92\xa3"
+  ANSI="\033["
+  RED="${ANSI}0;31m"
+  RESET="${ANSI}0m"
+  echo -e "${BOMB}  ${RED}tarbomb detected!$RESET" >&2
+  echo "Extracting into $PWD/$EXTRACT" >&2
   ;;
 esac
 
