@@ -30,7 +30,7 @@ EOF
 # Count unique roots in the tar file
 function roots {
   FILE=$1
-  echo $(tar tf "$FILE" | cut -d/ -f1 | uniq | wc -l)
+  echo $(tar tf "$FILE" | cut -d/ -f1 | sort -u | wc -l)
 }
 
 # Strip archive extension from the tar file for the tarbomb directory
